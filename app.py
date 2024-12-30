@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
+import gzip
 import pandas as pd
 
 # Initialize FastAPI app
@@ -23,14 +24,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load the machine learning pipeline
-print("Loading pipeline...")
+# Load the compressed pipeline
 try:
-    pipeline = joblib.load('product_classification_pipeline.pkl')
+    print("Decompressing and loading pipeline...")
+    with gzip.open('product_classification_pipeline.pkl.gz', 'rb') as f:
+        pipeline = joblib.load(f)
     print("Pipeline loaded successfully!")
 except FileNotFoundError:
-    print("Error: 'product_classification_pipeline.pkl' not found.")
-    raise HTTPException(status_code=500, detail="Pipeline file not found.")
+    print("Error: Compressed pipeline file not found.")
+    raise HTTPException(status_code=500, detail="Compressed pipeline file not found.")
+except Exception as e:
+    print(f"Error loading pipeline: {str(e)}")
+    raise HTTPException(status_code=500, detail="Pipeline loading failed.")
 
 # Define input schema using Pydantic
 class ProductInput(BaseModel):
