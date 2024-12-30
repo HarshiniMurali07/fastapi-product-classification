@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -13,7 +12,7 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",  # Swagger UI path
     redoc_url="/redoc" # ReDoc documentation path
-    )
+)
 
 # Add CORS middleware for cross-origin requests
 app.add_middleware(
@@ -55,10 +54,21 @@ def read_root():
 async def predict(product: ProductInput):
     try:
         print(f"Received input: {product.dict()}")
-        input_data = pd.DataFrame([product.dict()])
+
+        # Map input fields to match pipeline's expected column names
+        input_data = pd.DataFrame([{
+            's:name': product.s_name,
+            's:description': product.s_description,
+            's:breadcrumb': product.s_breadcrumb,
+            's:brand': product.s_brand,
+        }])
         print(f"Converted input to DataFrame: {input_data}")
+
+        # Make predictions
         predictions = pipeline.predict(input_data)
         print(f"Predictions: {predictions}")
+
+        # Prepare response
         response = {
             "Level 1": predictions[0][0],
             "Level 2": predictions[0][1],
@@ -71,3 +81,4 @@ async def predict(product: ProductInput):
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
 print("app.py has been successfully created and is ready to run!")
+
